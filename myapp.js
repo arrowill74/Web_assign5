@@ -24,27 +24,13 @@ var areas = ["Taipei City", "New Taipei City", "Taichung City", "Tainan City", "
 
 //load Taipei City
 $(document).ready(function() {
-    $.getJSON("https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22Taipei%20City%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys", {},
+    getJsonUntilSuccess("https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22Taipei%20City%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys",
         function(data) {
-            console.log(data);
             var currentTemperature = toCelsius(data.query.results.channel.item.condition.temp);
             $('#tempNow').text(currentTemperature);
             updatePage(0);
         })
 });
-
-
-//TA's patch
-function getJsonUntilSuccess(url, callback) {
-    $.getJSON(url, function(data) {
-        if (data.query.results) { // if data.query.results exist , do the following action.
-            callback(data);
-        } else {
-            // console.info("reloading : ", url);
-            getJsonUntilSuccess(url, callback);
-        }
-    })
-}
 
 //all cities' temp in list
 var $temps = $('#dropdown li span');
@@ -68,6 +54,7 @@ $('#dropdown li').on('click', function() {
 function updatePage(i) {
     getJsonUntilSuccess("https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22" + areas[i] + "%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys",
         function(data) {
+            console.log(data);
             $('.temperature').text(toCelsius(data.query.results.channel.item.condition.temp));
             $('.date').text(data.query.results.channel.item.forecast[0].date);
             var des = data.query.results.channel.item.forecast[0].text;
@@ -87,6 +74,18 @@ function updatePage(i) {
         });
 }
 
+//TA's patch
+function getJsonUntilSuccess(url, callback) {
+    $.getJSON(url, function(data) {
+        if (data.query.results) { // if data.query.results exist , do the following action.
+            callback(data);
+        } else {
+            // console.info("reloading : ", url);
+            getJsonUntilSuccess(url, callback);
+        }
+    })
+}
+
 //temp converter
 function toCelsius(fahrenheit) {
     var c = ((5 / 9) * (fahrenheit - 32)).toFixed(1)
@@ -98,13 +97,22 @@ function setIcon(des) {
         case "Sunny":
             return "clear-day";
             break;
+        case "Mostly Sunny":
+            return "clear-day";
+            break;
         case "Partly Cloudy":
             return "partly-cloudy-day";
             break;
         case "Mostly Cloudy":
             return "cloudy";
             break;
-        case "Windy" || "Breezy":
+        case "Cloudy":
+            return "cloudy";
+            break;
+        case "Windy":
+            return "wind";
+            break;
+        case "Breezy":
             return "wind";
             break;
         case "Fog":
